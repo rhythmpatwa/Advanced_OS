@@ -161,7 +161,9 @@ mem_init(void)
 	//////////////////////////////////////////////////////////////////////
 	// Make 'envs' point to an array of size 'NENV' of 'struct Env'.
 	// LAB 3: Your code here.
-
+	envs = (struct Env *)boot_alloc(sizeof(struct Env)*NENV);
+	//memset(envs, 0, sizeof(struct Env) * NENV);
+	
 	//////////////////////////////////////////////////////////////////////
 	// Make 'envs' point to an array of size 'NENV' of 'struct Env'.
 	// LAB 3: Your code here.
@@ -180,7 +182,7 @@ mem_init(void)
 
 	//////////////////////////////////////////////////////////////////////
 	// Now we set up virtual memory
-
+	
 	//////////////////////////////////////////////////////////////////////
 	// Map 'pages' read-only by the user at linear address UPAGES
 	// Permissions:
@@ -198,7 +200,7 @@ mem_init(void)
 	//    - the new image at UENVS  -- kernel R, user R
 	//    - envs itself -- kernel RW, user NONE
 	// LAB 3: Your code here.
-
+	boot_map_region(kern_pgdir, UTOP, PTSIZE, PADDR(envs), PTE_U);
 	//////////////////////////////////////////////////////////////////////
 	// Map the 'envs' array read-only by the user at linear address UENVS
 	// (ie. perm = PTE_U | PTE_P).
@@ -295,7 +297,9 @@ page_init(void)
 		pages[i].pp_link = page_free_list;
 		page_free_list = &pages[i];
 	}
-	int free = (int)ROUNDUP((char *)pages + (sizeof(struct PageInfo) * npages) - KERNBASE,PGSIZE)/PGSIZE;
+	int free = (int)ROUNDUP((char *)envs + (sizeof(struct Env) * NENV) - KERNBASE,PGSIZE)/PGSIZE;
+	//int free1 = (int)ROUNDUP((char *)envs + (sizeof(struct Env) * NENV),PGSIZE)/PGSIZE;
+	//int free2 = (int)ROUNDUP((free + free1),PGSIZE);
 
 	for (i = free; i < npages; i++) {
 		pages[i].pp_ref = 0;
@@ -569,7 +573,19 @@ int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
 	// LAB 3: Your code here.
-
+	pte_t *userpg;
+	void *end;
+	void *start;
+	end = (void *)ROUNDUP((va+len),PGSIZE);
+	start = (void *)va;
+	for(;start < end; start = start + PGSIZE){
+		userpg = pgdir_walk(env->env_pgdir, (void *) start, 0);
+		if((((uint32_t)*userpg & perm) != perm) || ((uint32_t)start > ULIM) || !(userpg)){
+			user_mem_check_addr = (uintptr_t)start;
+			return -E_FAULT;
+		}
+		start = (void *)ROUNDDOWN(start,PGSIZE);
+	}
 	return 0;
 }
 

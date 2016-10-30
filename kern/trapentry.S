@@ -45,11 +45,49 @@
 
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
+ Description                       Interrupt     Error Code
+Number
+
+Divide error                       0            No
+Debug exceptions                   1            No
+Breakpoint                         3            No
+Overflow                           4            No
+Bounds check                       5            No
+Invalid opcode                     6            No
+Coprocessor not available          7            No
+System error                       8            Yes (always 0)
+Coprocessor Segment Overrun        9            No
+Invalid TSS                       10            Yes
+Segment not present               11            Yes
+Stack exception                   12            Yes
+General protection fault          13            Yes
+Page fault                        14            Yes
+Coprocessor error                 16            No
  */
-
-
-
-/*
+	TRAPHANDLER_NOEC(divide_error, T_DIVIDE)
+	TRAPHANDLER_NOEC(debug_exceptions, T_DEBUG)
+	TRAPHANDLER_NOEC(break_point, T_BRKPT)
+	TRAPHANDLER_NOEC(overflow, T_OFLOW)
+	TRAPHANDLER_NOEC(bounds_check, T_BOUND)
+	TRAPHANDLER_NOEC(invalid_opcode, T_ILLOP)
+	TRAPHANDLER_NOEC(coprocessor_not_available, T_DEVICE)
+	TRAPHANDLER(system_error, T_DBLFLT)
+	TRAPHANDLER(invalid_tss, T_TSS)
+	TRAPHANDLER(segment_not_present, T_SEGNP)
+	TRAPHANDLER(stack_exception, T_STACK)
+	TRAPHANDLER(general_protection_fault, T_GPFLT)
+	TRAPHANDLER(page_fault, T_PGFLT)
+	TRAPHANDLER_NOEC(coprocessor_error, T_FPERR)
+	TRAPHANDLER_NOEC(system_call, T_SYSCALL)
+	/*
  * Lab 3: Your code here for _alltraps
  */
-
+ _alltraps:	
+ 		pushl %es
+ 		pushl %ds
+ 		pushal
+ 		movl $GD_KD, %eax
+ 		movw %ax, %es
+ 		movw %ax, %ds
+ 		pushl %esp	
+		call trap

@@ -63,9 +63,38 @@ void
 trap_init(void)
 {
 	extern struct Segdesc gdt[];
-
 	// LAB 3: Your code here.
-
+	void divide_error();
+	void debug_exceptions();
+	void break_point();
+	void overflow();
+	void bounds_check();
+	void invalid_opcode();
+	void coprocessor_not_available();
+	void system_error();
+	void invalid_tss();
+	void segment_not_present();
+	void stack_exception();
+	void general_protection_fault();
+	void page_fault();
+	void coprocessor_error();
+	void system_call();
+	SETGATE(idt[T_DIVIDE], 1, GD_KT, divide_error, 0);
+	SETGATE(idt[T_DEBUG], 1, GD_KT, debug_exceptions, 0);
+	SETGATE(idt[T_BRKPT], 1, GD_KT, break_point, 3);
+	SETGATE(idt[T_OFLOW], 1, GD_KT, overflow, 0);
+	SETGATE(idt[T_BOUND], 1, GD_KT, bounds_check, 0);
+	SETGATE(idt[T_ILLOP], 1, GD_KT, invalid_opcode, 0);
+	SETGATE(idt[T_DEVICE], 1, GD_KT, coprocessor_not_available, 0);
+	SETGATE(idt[T_DBLFLT], 1, GD_KT, system_error, 0);
+	SETGATE(idt[T_TSS], 1, GD_KT, invalid_tss, 0);
+	SETGATE(idt[T_SEGNP], 1, GD_KT, segment_not_present, 0);
+	SETGATE(idt[T_STACK], 1, GD_KT, stack_exception, 0);
+	SETGATE(idt[T_GPFLT], 1, GD_KT, general_protection_fault, 0);
+	SETGATE(idt[T_PGFLT], 1, GD_KT, page_fault, 0);
+	SETGATE(idt[T_FPERR], 1, GD_KT, coprocessor_error, 0);
+	SETGATE(idt[T_SYSCALL], 1, GD_KT, system_call, 3);
+	
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -143,7 +172,26 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
-
+	//cprintf("%x",tf->tf_trapno);
+	if(tf->tf_trapno == T_PGFLT){
+		page_fault_handler(tf);
+		return;
+	}
+	if(tf->tf_trapno == T_BRKPT){	
+		monitor(tf);
+		return;
+	}
+	if(tf->tf_trapno == T_SYSCALL){
+		int32_t value;
+		value = syscall(tf->tf_regs.reg_eax, 
+				tf->tf_regs.reg_edx,
+				tf->tf_regs.reg_ecx,
+				tf->tf_regs.reg_ebx,
+				tf->tf_regs.reg_edi, 
+				tf->tf_regs.reg_esi);
+		tf->tf_regs.reg_eax = value;
+		return;
+	}
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
@@ -204,7 +252,8 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
-
+	if((tf->tf_cs & 0x3) == 0)
+		panic("kernel page fault occured");
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
 
