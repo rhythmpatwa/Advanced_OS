@@ -19,12 +19,30 @@
 //   If 'pg' is null, pass sys_ipc_recv a value that it will understand
 //   as meaning "no page".  (Zero is not the right value, since that's
 //   a perfectly valid place to map a page.)
+
 int32_t
 ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 {
+	int a;
 	// LAB 4: Your code here.
-	panic("ipc_recv not implemented");
-	return 0;
+	if(pg)
+		a = sys_ipc_recv(pg);
+	else
+		a = sys_ipc_recv((void *)UTOP);
+	if(a < 0){
+		if(*from_env_store)
+			*from_env_store = 0;
+		if(perm_store)
+			*perm_store = 0;
+		return a;
+	}
+	
+	if(from_env_store)
+		*from_env_store = thisenv->env_ipc_from;
+	if(perm_store)
+		*perm_store = thisenv->env_ipc_perm;
+	//panic("ipc_recv not implemented");
+	return thisenv->env_ipc_value;
 }
 
 // Send 'val' (and 'pg' with 'perm', if 'pg' is nonnull) to 'toenv'.
@@ -39,6 +57,15 @@ void
 ipc_send(envid_t to_env, uint32_t val, void *pg, int perm)
 {
 	// LAB 4: Your code here.
+	if(pg == NULL)
+		pg = (void *)(UTOP + PGSIZE);
+	int check =1;
+	while((check >= 0) || (check == -E_IPC_NOT_RECV)){
+		if(check == 0)
+			return;
+		sys_yield();
+		check = sys_ipc_try_send(to_env, val, pg, perm);
+	}	
 	panic("ipc_send not implemented");
 }
 

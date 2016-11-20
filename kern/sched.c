@@ -6,13 +6,15 @@
 #include <kern/monitor.h>
 
 void sched_halt(void);
+int i =0;
 
 // Choose a user environment to run and run it.
 void
 sched_yield(void)
 {
 	struct Env *idle;
-
+	int j = 0;
+	
 	// Implement simple round-robin scheduling.
 	//
 	// Search through 'envs' for an ENV_RUNNABLE environment in
@@ -29,7 +31,20 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// LAB 4: Your code here.
+	if(curenv != NULL)
+		j = ENVX(curenv->env_id);
+	else
+		j = 0;
 
+	for (i = 0; i < NENV; i++) {
+		int k = (j + i)%NENV;
+		if (envs[k].env_status == ENV_RUNNABLE){
+			idle = &envs[k];
+			env_run(idle);
+		}
+	}
+	if((curenv != NULL) && (curenv->env_status == ENV_RUNNING))
+		env_run(curenv);
 	// sched_halt never returns
 	sched_halt();
 }
