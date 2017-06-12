@@ -210,7 +210,7 @@ env_setup_vm(struct Env *e)
 //	-E_NO_MEM on memory exhaustion
 //
 int
-env_alloc(struct Env **newenv_store, envid_t parent_id)
+env_alloc(struct Env **newenv_store, envid_t parent_id)						
 {
 	int32_t generation;
 	int r;
@@ -246,7 +246,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	// GD_UT is the user text segment selector (see inc/memlayout.h).
 	// The low 2 bits of each segment register contains the
 	// Requestor Privilege Level (RPL); 3 means user mode.  When
-	// we switch privilege levels, the hardware does various
+	// we switch privile0ge levels, the hardware does various
 	// checks involving the RPL and the Descriptor Privilege Level
 	// (DPL) stored in the descriptors themselves.
 	e->env_tf.tf_ds = GD_UD | 3;
@@ -281,9 +281,9 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 // Panic if any allocation attempt fails.
 //
 static void
-region_alloc(struct Env *e, void *va, size_t len)
-{
-	// LAB 3: Your code here.
+region_alloc(struct Env *e, void *va, size_t len)					//allocates a physical page for the environment and
+{											//inserts the allocated page into the environments
+	// LAB 3: Your code here.							//page directory.
 	// (But only if you need it for load_icode.)
 	//
 	// Hint: It is easier to use region_alloc if the caller can pass
